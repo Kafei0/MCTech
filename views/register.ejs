@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro</title>
+    <style>
+        /* Reutilizamos el estilo del login */
+        body { /* igual que en login.ejs */ }
+        .container { /* igual que en login.ejs */ }
+        .header { /* igual que en login.ejs */ }
+        input, select, button { /* igual que en login.ejs */ }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">Registro de Usuario</div>
+        <form action="/register" method="POST">
+            <input type="text" name="nombre" placeholder="Nombre" required>
+            <input type="email" name="email" placeholder="Correo" required>
+            <input type="password" name="password" placeholder="Contraseña" required>
+            <select name="rol" required>
+                <option value="Fisioterapeuta">Fisioterapeuta</option>
+                <option value="Paciente">Paciente</option>
+            </select>
+            <button type="submit">Registrarse</button>
+        </form>
+    </div>
+</body>
+</html>

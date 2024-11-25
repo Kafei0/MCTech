@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Paciente</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+        }
+        .header {
+            background-color: #0044cc;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 24px;
+            width: 100%;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .btn-empezar {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .btn-empezar:hover {
+            background-color: #218838;
+        }
+        /* Sidebar style */
+        .sidebar {
+            width: 250px;
+            background-color: #003399;
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .sidebar h2 {
+            margin-top: 0;
+            font-size: 20px;
+            color: #ffffff;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            width: 100%;
+        }
+        .sidebar ul li {
+            margin: 10px 0;
+            cursor: pointer;
+            padding: 10px;
+            background-color: #0044cc;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .sidebar ul li.active {
+            background-color: #0056e0;
+        }
+        .sidebar ul li:hover {
+            background-color: #0056e0;
+        }
+        /* Hidden sections */
+        .hidden {
+            display: none;
+        }
+        /* Popup style */
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            z-index: 1000;
+        }
+        .popup-content {
+            text-align: center;
+        }
+        .popup video {
+            max-width: 100%;
+            margin-bottom: 10px;
+        }
+        .popup button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .popup button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Menú</h2>
+        <ul>
+            <li id="ejercicios-tab" onclick="showSection('ejercicios')">Ejercicios</li>
+            <li id="ejercicios-completados-tab" onclick="showSection('ejerciciosCompletados')">Ejercicios Completados</li>
+        </ul>
+    </div>
+    <div class="content">
+        <div class="header">
+            Bienvenido
+        </div>
+        
+        <div id="ejercicios" class="section">
+            <h1>Ejercicios Asignados</h1>
+            <p>Aquí podrás ver tus ejercicios asignados y agregar notas clínicas después de completarlos.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Ejercicio</th>
+                        <th>Duración (min)</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (ejerciciosIncompletos.length === 0) { %>
+                        <tr>
+                            <td colspan="4">No tienes ejercicios asignados.</td>
+                        </tr>
+                    <% } else { %>
+                        <% ejerciciosIncompletos.forEach(ejercicio => { %>
+                            <tr>
+                                <td><%= ejercicio.ID %></td>
+                                <td><%= ejercicio.NOMBRE_EJERCICIO %></td>
+                                <td><%= ejercicio.DURACION %></td>
+                                <td>
+                                    <button class="btn-empezar" onclick="empezarEjercicio(<%= ejercicio.ID %>, <%= ejercicio.DURACION %>, '<%= ejercicio.VideoURL %>')">Empezar</button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="ejerciciosCompletados" class="section hidden">
+            <h1>Ejercicios Completados</h1>
+            <p>Aquí están los ejercicios que has completado.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Ejercicio</th>
+                        <th>Duración (min)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (ejerciciosCompletados.length === 0) { %>
+                        <tr>
+                            <td colspan="3">No tienes ejercicios completados.</td>
+                        </tr>
+                    <% } else { %>
+                        <% ejerciciosCompletados.forEach(ejercicio => { %>
+                            <tr>
+                                <td><%= ejercicio.ID %></td>
+                                <td><%= ejercicio.NOMBRE_EJERCICIO %></td>
+                                <td><%= ejercicio.DURACION %></td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal para mostrar el video -->
+    <div id="videoModal" class="popup hidden">
+        <div class="popup-content">
+            <video id="videoPlayer" width="400" controls>
+                <source src="" type="video/mp4">
+                Tu navegador no soporta el formato de video.
+            </video>
+            <div id="timer">00:00</div>
+            <button onclick="cerrarPopup()">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        function showSection(section) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(section).classList.remove('hidden');
+            document.querySelectorAll('.sidebar ul li').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(section + '-tab').classList.add('active');
+        }
+
+        function empezarEjercicio(id, duracion, videoURL) {
+            const tiempoRestante = duracion * 60; // Convertir minutos a segundos
+            let tiempo = tiempoRestante;
+            const interval = setInterval(() => {
+                const minutos = Math.floor(tiempo / 60);
+                const segundos = tiempo % 60;
+                document.getElementById('timer').innerText = `${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
+                if (tiempo <= 0) {
+                    clearInterval(interval);
+                    actualizarEstadoEjercicio(id);
+                }
+                tiempo--;
+            }, 1000);
+
+            // Mostrar el video
+            const videoPlayer = document.getElementById('videoPlayer');
+            videoPlayer.src = videoURL;
+
+            // Mostrar el popup con el video
+            document.getElementById('videoModal').classList.remove('hidden');
+        }
+
+        function cerrarPopup() {
+            document.getElementById('videoModal').classList.add('hidden');
+        }
+
+        function actualizarEstadoEjercicio(id) {
+            fetch(`/actualizar-estado-ejercicio/${id}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Ejercicio completado');
+                        location.reload();
+                    }
+                });
+        }
+    </script>
+</body>
+</html>

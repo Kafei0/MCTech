@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Fisioterapeuta</title>
+    <style>
+        /* Estilos generales */
+        body {
+            display: flex;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #0044cc;
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+        }
+        .sidebar h2 {
+            color: white;
+            margin-bottom: 30px;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+            margin: 15px 0;
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 10px 0;
+        }
+        .sidebar a:hover {
+            background-color: #003399;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+        #administrar-pacientes {
+            display: none;
+        }
+        /* Estilos para la tabla */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        /* Botones */
+        .btn {
+            color: white;
+            padding: 10px;
+            margin: 5px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-añadir {
+            background-color: #0044cc;
+        }
+        .btn-añadir:hover {
+            background-color: #003399;
+        }
+        .btn-eliminar {
+            background-color: red;
+        }
+        .btn-eliminar:hover {
+            background-color: darkred;
+        }
+        .btn-ejercicio {
+            background-color: green;
+            color: white;
+        }
+        .btn-ejercicio:hover {
+            background-color: darkgreen;
+        }
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2 onclick="mostrarListaPacientes()" style="cursor: pointer;">Panel Fisioterapeuta</h2>
+        <a href="#" onclick="mostrarAdministrarPacientes()">Administrar Pacientes</a>
+        <a href="#">Resultados</a>
+    </div>
+    <div class="main-content">
+        <h1>Bienvenido/a</h1>
+
+        <div id="administrar-pacientes">
+            <h2>Pacientes Registrados</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Notas</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% pacientes.forEach(paciente => { %>
+                        <tr>
+                            <td><%= paciente.ID %></td>
+                            <td><%= paciente.NOMBRE %></td>
+                            <td><%= paciente.NOTAS %></td>
+                            <td>
+                                <form action="/delete-patient/<%= paciente.ID %>" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas eliminar a este paciente?')">
+                                    <button type="submit" class="btn btn-eliminar">Eliminar Paciente</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+            <button class="btn btn-añadir" onclick="abrirFormulario()">Añadir Paciente</button>
+        </div>
+
+        <div id="pacientes-lista">
+            <h2>Lista de Pacientes para Añadir Ejercicios</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Añadir Ejercicio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% pacientes.forEach(paciente => { %>
+                        <tr>
+                            <td><%= paciente.ID %></td>
+                            <td><%= paciente.NOMBRE %></td>
+                            <td>
+                                <button class="btn btn-ejercicio" onclick="abrirFormularioEjercicio(<%= paciente.ID %>)">Añadir Ejercicio</button>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal para añadir paciente -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="cerrarFormulario()">&times;</span>
+            <h2>Añadir Paciente</h2>
+            <label for="pacienteSelect">Selecciona un paciente:</label>
+            <select id="pacienteSelect"></select>
+            <button class="btn btn-añadir" onclick="añadirPaciente()">Añadir</button>
+        </div>
+    </div>
+
+    <!-- Modal para añadir ejercicio -->
+    <div id="myModalEjercicio" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="cerrarFormularioEjercicio()">&times;</span>
+            <h2>Añadir Ejercicio</h2>
+            <input type="hidden" id="pacienteIdEjercicio"> <!-- Campo oculto para el ID del paciente -->
+            <label for="ejercicioSelect">Selecciona un ejercicio:</label>
+            <select id="ejercicioSelect"></select>
+            <label for="duracionEjercicio">Duración (minutos):</label>
+            <input type="number" id="duracionEjercicio" min="1" placeholder="Duración en minutos" required>
+            <button class="btn btn-añadir" onclick="añadirEjercicio()">Añadir</button>
+        </div>
+    </div>
+
+    <script>
+        function mostrarAdministrarPacientes() {
+            document.getElementById('administrar-pacientes').style.display = "block";
+            document.getElementById('pacientes-lista').style.display = "none"; // Ocultar lista de pacientes al mostrar administrar
+        }
+
+        function mostrarListaPacientes() {
+            document.getElementById('administrar-pacientes').style.display = "none"; // Ocultar administrar pacientes
+            document.getElementById('pacientes-lista').style.display = "block"; // Mostrar lista de pacientes
+        }
+
+        function abrirFormulario() {
+            fetch('/pacientes')
+                .then(response => response.json())
+                .then(data => {
+                    const pacienteSelect = document.getElementById('pacienteSelect');
+                    pacienteSelect.innerHTML = '';
+                    data.forEach(paciente => {
+                        const option = document.createElement('option');
+                        option.value = paciente.ID;
+                        option.textContent = paciente.NOMBRE;
+                        pacienteSelect.appendChild(option);
+                    });
+                    document.getElementById('myModal').style.display = "block";
+                })
+                .catch(error => console.error('Error al cargar pacientes:', error));
+        }
+
+        function cerrarFormulario() {
+            document.getElementById('myModal').style.display = "none";
+        }
+
+        function abrirFormularioEjercicio(pacienteId) {
+            document.getElementById('myModalEjercicio').style.display = 'block';
+            document.getElementById('pacienteIdEjercicio').value = pacienteId; // Almacenar ID del paciente
+            cargarEjercicios(); // Cargar ejercicios disponibles
+        }
+
+        function cargarEjercicios() {
+            fetch('/ejercicios')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error al cargar ejercicios');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const ejercicioSelect = document.getElementById('ejercicioSelect');
+                    ejercicioSelect.innerHTML = ''; // Limpiar opciones existentes
+                    data.forEach(ejercicio => {
+                        const option = document.createElement('option');
+                        option.value = ejercicio.ID; // Asegúrate de que este es el campo correcto
+                        option.textContent = ejercicio.NOMBRE_EJERCICIO; // Asegúrate de que este es el campo correcto
+                        ejercicioSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error al cargar ejercicios:', error));
+        }
+
+        function cerrarFormularioEjercicio() {
+            document.getElementById('myModalEjercicio').style.display = 'none';
+        }
+
+        function añadirPaciente() {
+            const pacienteId = document.getElementById('pacienteSelect').value;
+            fetch('/anadir-paciente', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: pacienteId })  // Cambiado a { id: pacienteId }
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload(); // Recargar la página para ver el nuevo paciente
+                } else {
+                    console.error('Error al añadir paciente');
+                }
+            });
+        }
+
+        function añadirEjercicio() {
+            const ejercicioId = document.getElementById('ejercicioSelect').value;
+            const duracion = document.getElementById('duracionEjercicio').value;
+            const pacienteId = document.getElementById('pacienteIdEjercicio').value; // Obtener el ID del paciente del campo oculto
+
+            fetch('/anadir-ejercicio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ pacienteId, ejercicioId, duracion })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Ejercicio añadido exitosamente');
+                    location.reload();
+                } else {
+                    return response.text().then(error => {
+                        console.error('Error al añadir ejercicio:', error);
+                        alert('Error al añadir ejercicio: ' + error);
+                    });
+                }
+            })
+            .catch(error => console.error('Error al añadir ejercicio:', error));
+        }
+    </script>
+</body>
+</html>
