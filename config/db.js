@@ -1,9 +1,10 @@
 const mysql = require('mysql2');
 
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'kafei',         // Reemplaza con tu usuario de MySQL
-    password: '10102010',   // Reemplaza con tu contraseña de MySQL
+    host: 'mctech-irapuato-5f24.g.aivencloud.com',
+    port: 21630, // Reemplaza por el puerto correcto
+    user: 'avnadmin',         // Reemplaza con tu usuario de MySQL
+    password: 'AVNS_GGJJyjkTHRLbq7PRGKQ',   // Reemplaza con tu contraseña de MySQL
     database: 'MCTechBD'         // Nombre de la base de datos
 });
 
